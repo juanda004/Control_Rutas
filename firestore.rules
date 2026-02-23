@@ -1,0 +1,111 @@
+/**
+ * Core Philosophy: This ruleset implements a Role-Based Access Control (RBAC) model
+ * with a clear distinction between 'Admins' and standard 'Authenticated Users'.
+ * Admins have full management capabilities over driver data and route logs. Authenticated users
+ * can manage their own route logs.
+ *
+ * Data Structure:
+ * - /roles_admin/{adminId}: A lookup collection to identify users with administrative privileges.
+ * - /drivers/{driverId}: A top-level collection of all driver profiles. This data is
+ *   readable by all, but writable only by admins.
+ * - /routeLogs/{routeLogId}: A top-level collection of daily logs. Any authenticated user
+ *   can create and update logs. Admins can delete any log.
+ *
+ * Key Security Decisions:
+ * - Admin roles are managed via the `/roles_admin` collection. Rules perform a fast `exists()`
+ *   check against this collection to grant administrative privileges.
+ * - All users (authenticated or not) can read the list of drivers to populate UI elements as required.
+ * - Route logs can be created and updated by any signed-in user.
+ * - Deletion of route logs is a privileged action, restricted to administrators to preserve
+ *   data integrity unless explicitly removed by an admin.
+ *
+ * Structural Segregation: Each data type (`roles_admin`, `drivers`, `routeLogs`) is stored
+ * in its own top-level collection. This separation simplifies rules and aligns with how
+ * data will be queried.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user has an admin role by verifying their
+     * UID exists as a document in the /roles_admin collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Ensures an update or delete operation is targeting a document that
+     * actually exists, preventing unintended behavior.
+     */
+    function isExistingDocument() {
+      return resource != null;
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Defines admin user roles. This collection is managed out-of-band
+     *              (e.g., via Firebase Console or a trusted server) and is read-only for clients.
+     * @path        /roles_admin/{adminId}
+     * @allow       (get) An admin checks if another user is an admin or a user checks their own role.
+     * @deny        (list, create, update, delete) Any client-side modification is denied.
+     * @principle   Secures administrative roles by making them read-only from the client-side.
+     */
+    match /roles_admin/{adminId} {
+      allow get: if isSignedIn() && (isAdmin() || request.auth.uid == adminId);
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Manages driver profiles. This collection is readable by everyone
+     *              but can only be created, modified, or deleted by administrators.
+     * @path        /drivers/{driverId}
+     * @allow       (list, get) Any user (including anonymous) can load the list of drivers.
+     * @allow       (create, update, delete) An admin adds, updates, or removes a driver.
+     * @principle   Public read with admin-only writes for centrally managed data.
+     */
+    match /drivers/{driverId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && isExistingDocument();
+      allow delete: if isAdmin() && isExistingDocument();
+    }
+
+    /**
+     * @description Stores daily route logs for each driver. Authenticated users can create and update
+     *              logs, while admins have full read and delete access.
+     * @path        /routeLogs/{routeLogId}
+     * @allow       (create, update) Any signed-in user can create or update a log.
+     * @allow       (delete) An admin can delete a log.
+     * @deny        (delete) A non-admin user attempts to delete a log.
+     * @principle   Allows user-level management with admin oversight and control.
+     */
+    match /routeLogs/{routeLogId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isExistingDocument();
+      allow delete: if isAdmin() && isExistingDocument();
+    }
+  }
+}
