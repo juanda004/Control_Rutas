@@ -82,6 +82,14 @@
           "description": "The specific calendar date for which this route log applies.",
           "format": "date"
         },
+        "sede": {
+          "type": "string",
+          "description": "La sede (campus) donde se registró el registro.",
+          "enum": [
+            "Preescolar",
+            "Bachillerato"
+          ]
+        },
         "morningCheckIn": {
           "type": "string",
           "description": "Timestamp when the driver started their morning shift.",
@@ -135,7 +143,8 @@
         "routeNumber",
         "licensePlate",
         "logDate",
-        "createdAt"
+        "createdAt",
+        "sede"
       ]
     }
   },

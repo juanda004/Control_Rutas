@@ -1,4 +1,5 @@
 export type Shift = "morning" | "afternoon";
+export type Sede = "Preescolar" | "Bachillerato";
 
 export type Driver = {
   id: string;
@@ -16,6 +17,7 @@ export type RouteLog = {
   routeNumber: string;
   licensePlate: string;
   logDate: string; // YYYY-MM-DD
+  sede: Sede;
   morningCheckIn?: number;
   morningCheckOut?: number;
   morningObservations?: string;

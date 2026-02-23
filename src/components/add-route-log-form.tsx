@@ -20,11 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type Driver } from "@/app/lib/types";
+import { type Driver, Sede } from "@/app/lib/types";
 
 const formSchema = z.object({
   driverId: z.string().min(1, "Debes seleccionar un conductor"),
   morningObservations: z.string().optional(),
+  sede: z.enum(["Preescolar", "Bachillerato"]).optional(),
 });
 
 export type AddRouteLogFormValues = z.infer<typeof formSchema>;
@@ -32,11 +33,18 @@ export type AddRouteLogFormValues = z.infer<typeof formSchema>;
 interface AddRouteLogFormProps {
   onAddLog: (data: AddRouteLogFormValues) => void;
   drivers: Driver[];
+  isAdmin: boolean;
 }
-
-export function AddRouteLogForm({ onAddLog, drivers }: AddRouteLogFormProps) {
-  const form = useForm<AddRouteLogFormValues>({
-    resolver: zodResolver(formSchema),
+export function AddRouteLogForm({ onAddLog, drivers, isAdmin }: AddRouteLogFormProps) {
+  const form = useForm<AddRouteLogFormValues>({resolver: zodResolver(formSchema.superRefine((data, ctx) => {
+        if (isAdmin && !data.sede) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Como administrador, debes seleccionar una sede.",
+                path: ["sede"],
+            });
+        }
+    })),
     defaultValues: {
       driverId: "",
       morningObservations: "",
@@ -51,6 +59,29 @@ export function AddRouteLogForm({ onAddLog, drivers }: AddRouteLogFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {isAdmin && (
+            <FormField
+            control={form.control}
+            name="sede"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Sede</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                    <FormControl>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una sede" />
+                    </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        <SelectItem value="Preescolar">Preescolar</SelectItem>
+                        <SelectItem value="Bachillerato">Bachillerato</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        )}
         <FormField
           control={form.control}
           name="driverId"

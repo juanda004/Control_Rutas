@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,16 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Download } from 'lucide-react';
-import { type Driver, type RouteLog } from '@/app/lib/types';
+import { type Driver, type RouteLog, type Sede } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface DownloadReportProps {
   drivers: Driver[] | null;
   allLogs: RouteLog[] | null;
+  isAdmin: boolean;
+  selectedSede: Sede | null;
 }
-
-export function DownloadReport({ drivers, allLogs }: DownloadReportProps) {
+export function DownloadReport({ drivers, allLogs, isAdmin, selectedSede }: DownloadReportProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const { toast } = useToast();
@@ -43,12 +43,16 @@ export function DownloadReport({ drivers, allLogs }: DownloadReportProps) {
     }
 
     const selectedDateStr = format(date, 'yyyy-MM-dd');
-    const logsForDate = allLogs.filter(log => log.logDate === selectedDateStr);
+     let logsForDate = allLogs.filter(log => log.logDate === selectedDateStr);
+
+    if (!isAdmin && selectedSede) {
+      logsForDate = logsForDate.filter(log => log.sede === selectedSede);
+    }
 
     if (logsForDate.length === 0) {
       toast({
         title: "Sin datos",
-        description: "No hay registros para la fecha seleccionada.",
+        description: "No hay registros para la fecha y sede seleccionada.",
       });
       return;
     }
@@ -59,6 +63,7 @@ export function DownloadReport({ drivers, allLogs }: DownloadReportProps) {
       
       return {
         'Fecha': log.logDate,
+        'Sede': log.sede,
         'Conductor': driver?.name || 'Desconocido',
         'Nº Ruta': log.routeNumber,
         'Matrícula': log.licensePlate,
@@ -115,4 +120,3 @@ export function DownloadReport({ drivers, allLogs }: DownloadReportProps) {
     </Popover>
   );
 }
-

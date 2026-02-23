@@ -166,11 +166,14 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
                 </CardTitle>
                 <CardDescription>Conductor: {log.driver?.name || log.driverId}</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={status.variant}>
-                  {status.completed && <CheckCircle2 className="mr-2 h-4 w-4"/>}
-                  {status.text}
-              </Badge>
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <Badge variant="outline" className="text-xs">{log.sede}</Badge>
+                <Badge variant={status.variant} className="text-xs">
+                    {status.completed && <CheckCircle2 className="mr-1.5 h-3.5 w-3.5"/>}
+                    {status.text}
+                </Badge>
+              </div>
               {isAdmin && (
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
