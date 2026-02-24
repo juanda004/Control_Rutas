@@ -67,19 +67,9 @@ export default function DashboardPage() {
     const now = new Date();
     setCurrentYear(now.getFullYear());
   }, []);
-
-  useEffect(() => {
-    if (!isUserLoading && user && !isAdmin) {
-      const savedSede = localStorage.getItem('userSede') as Sede;
-      if (savedSede && ["Preescolar", "Bachillerato"].includes(savedSede)) {
-        setSelectedSede(savedSede);
-      }
-    }
-  }, [isUserLoading, user, isAdmin]);
   
   const handleSedeSelect = (sede: Sede) => {
     setSelectedSede(sede);
-    localStorage.setItem('userSede', sede);
   };
 
   const driversQuery = useMemoFirebase(() => {
