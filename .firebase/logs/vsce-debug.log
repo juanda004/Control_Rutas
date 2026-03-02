@@ -73,3 +73,4 @@
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"E0223 21:05:29.118754    3356 watch.go:40] Failed to load config from \"c:\\\\xampp\\\\htdocs\\\\Control_Rutas\\\\dataconnect\": could not find dataconnect.yaml in `c:\\xampp\\htdocs\\Control_Rutas\\dataconnect`\n"}}
 [debug] [2026-02-24T02:05:39.121Z] E0223 21:05:39.117706    3356 watch.go:40] Failed to load config from "c:\\xampp\\htdocs\\Control_Rutas\\dataconnect": could not find dataconnect.yaml in `c:\xampp\htdocs\Control_Rutas\dataconnect`
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"E0223 21:05:39.117706    3356 watch.go:40] Failed to load config from \"c:\\\\xampp\\\\htdocs\\\\Control_Rutas\\\\dataconnect\": could not find dataconnect.yaml in `c:\\xampp\\htdocs\\Control_Rutas\\dataconnect`\n"}}
+[debug] [2026-03-02T15:19:13.920Z] [Firebase Plugin] Activating Firebase extension.

@@ -35,8 +35,10 @@ interface AddRouteLogFormProps {
   drivers: Driver[];
   isAdmin: boolean;
 }
+
 export function AddRouteLogForm({ onAddLog, drivers, isAdmin }: AddRouteLogFormProps) {
-  const form = useForm<AddRouteLogFormValues>({resolver: zodResolver(formSchema.superRefine((data, ctx) => {
+  const form = useForm<AddRouteLogFormValues>({
+    resolver: zodResolver(formSchema.superRefine((data, ctx) => {
         if (isAdmin && !data.sede) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,

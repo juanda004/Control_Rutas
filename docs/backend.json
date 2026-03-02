@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Driver": {
@@ -25,11 +26,6 @@
         "contactNumber": {
           "type": "string",
           "description": "The primary contact phone number for the driver."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the driver.",
-          "format": "email"
         },
         "isActive": {
           "type": "boolean",
