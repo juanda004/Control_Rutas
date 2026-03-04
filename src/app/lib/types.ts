@@ -7,7 +7,6 @@ export type Driver = {
   routeNumber: string;
   licensePlate: string;
   contactNumber?: string;
-  email?: string;
   isActive: boolean;
 };
 

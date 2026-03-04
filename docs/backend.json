@@ -1,11 +1,10 @@
-
 {
   "entities": {
     "Driver": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Driver",
       "type": "object",
-      "description": "Represents a driver who performs routes, managed through an administrator panel. Drivers are permanent personnel with a specific route and vehicle assigned.",
+      "description": "Represents a driver who performs routes, managed through an administrator panel.",
       "properties": {
         "id": {
           "type": "string",
@@ -29,16 +28,14 @@
         },
         "isActive": {
           "type": "boolean",
-          "description": "Indicates if the driver is currently active and available for route assignments."
+          "description": "Indicates if the driver is currently active."
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when the driver record was created.",
           "format": "date-time"
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp when the driver record was last updated.",
           "format": "date-time"
         }
       },
@@ -55,81 +52,61 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "RouteLog",
       "type": "object",
-      "description": "Records the daily check-in and check-out times, route details, and observations for a driver's morning and afternoon shifts.",
+      "description": "Records the daily check-in and check-out times.",
       "properties": {
         "id": {
-          "type": "string",
-          "description": "Unique identifier for the RouteLog entity."
+          "type": "string"
         },
         "driverId": {
-          "type": "string",
-          "description": "Reference to the Driver entity. (Relationship: Driver 1:N RouteLog)"
+          "type": "string"
         },
         "routeNumber": {
-          "type": "string",
-          "description": "The identifier for the route assigned to the driver on this day."
+          "type": "string"
         },
         "licensePlate": {
-          "type": "string",
-          "description": "The license plate number of the vehicle used for the route."
+          "type": "string"
         },
         "logDate": {
           "type": "string",
-          "description": "The specific calendar date for which this route log applies.",
           "format": "date"
         },
         "sede": {
           "type": "string",
-          "description": "La sede (campus) donde se registró el registro.",
           "enum": [
             "Preescolar",
             "Bachillerato"
           ]
         },
         "morningCheckIn": {
-          "type": "string",
-          "description": "Timestamp when the driver started their morning shift.",
-          "format": "date-time"
+          "type": "number"
         },
         "morningCheckOut": {
-          "type": "string",
-          "description": "Timestamp when the driver finished their morning shift.",
-          "format": "date-time"
+          "type": "number"
         },
         "morningObservations": {
-          "type": "string",
-          "description": "Any observations or notes related to the morning shift."
+          "type": "string"
         },
         "morningSignature": {
-          "type": "string",
-          "description": "Digital signature or name input by the driver upon morning shift completion for audit purposes."
+          "type": "string"
         },
         "afternoonCheckIn": {
-          "type": "string",
-          "description": "Timestamp when the driver started their afternoon shift.",
-          "format": "date-time"
+          "type": "number"
         },
         "afternoonCheckOut": {
-          "type": "string",
-          "description": "Timestamp when the driver finished their afternoon shift.",
-          "format": "date-time"
+          "type": "number"
         },
         "afternoonObservations": {
-          "type": "string",
-          "description": "Any observations or notes related to the afternoon shift."
+          "type": "string"
         },
         "afternoonSignature": {
-          "type": "string",
-          "description": "Digital signature or name input by the driver upon afternoon shift completion for audit purposes."
+          "type": "string"
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when this route log record was first created.",
           "format": "date-time"
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp when this route log record was last updated.",
           "format": "date-time"
         }
       },
@@ -150,56 +127,17 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/roles_admin/{adminId}",
-        "definition": {
-          "entityName": "adminRole",
-          "schema": {
-            "$ref": "#/backend/entities/adminRole"
-          },
-          "description": "Almacena los UIDs de los usuarios de Firebase que tienen privilegios de administrador para el control de acceso basado en roles. El ID del documento es el UID de Firebase del administrador.",
-          "params": [
-            {
-              "name": "adminId",
-              "description": "El UID de Firebase del usuario que tiene el rol de administrador."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/drivers/{driverId}",
-        "definition": {
-          "entityName": "Driver",
-          "schema": {
-            "$ref": "#/backend/entities/Driver"
-          },
-          "description": "Colección principal de todos los conductores permanentes de la aplicación, gestionada por administradores.",
-          "params": [
-            {
-              "name": "driverId",
-              "description": "El identificador único del conductor."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/routeLogs/{routeLogId}",
-        "definition": {
-          "entityName": "RouteLog",
-          "schema": {
-            "$ref": "#/backend/entities/RouteLog"
-          },
-          "description": "Registros diarios de las rutas realizadas por los conductores. Los usuarios autenticados pueden crear, leer y actualizar registros; los administradores tienen acceso completo a todos los registros.",
-          "params": [
-            {
-              "name": "routeLogId",
-              "description": "El identificador único del registro de ruta."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "La estructura de Firestore se diseña para ser simple y directa. Los datos se segregan en colecciones de nivel superior (`drivers`, `routeLogs`) con reglas de seguridad homogéneas. Todos los usuarios autenticados tienen permisos para leer y escribir registros de ruta, facilitando la colaboración. Los administradores tienen control total sobre la gestión de conductores. Se prohíbe la eliminación de registros de ruta para mantener un historial de auditoría."
+    "/roles_admin/{adminId}": {
+      "schema": "adminRole",
+      "description": "Admin roles collection."
+    },
+    "/drivers/{driverId}": {
+      "schema": "Driver",
+      "description": "Drivers collection."
+    },
+    "/routeLogs/{routeLogId}": {
+      "schema": "RouteLog",
+      "description": "Route logs collection."
+    }
   }
 }

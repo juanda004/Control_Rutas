@@ -22,7 +22,6 @@ const formSchema = z.object({
   routeNumber: z.string().min(1, "El número de ruta es obligatorio"),
   licensePlate: z.string().min(1, "La matrícula es obligatoria"),
   contactNumber: z.string().optional(),
-  email: z.string().email("Email inválido").optional().or(z.literal('')),
   isActive: z.boolean(),
 });
 
@@ -41,7 +40,6 @@ export function DriverForm({ onSubmit, driver }: DriverFormProps) {
       routeNumber: "",
       licensePlate: "",
       contactNumber: "",
-      email: "",
       isActive: true,
     },
   });
@@ -52,7 +50,6 @@ export function DriverForm({ onSubmit, driver }: DriverFormProps) {
         routeNumber: "",
         licensePlate: "",
         contactNumber: "",
-        email: "",
         isActive: true,
     });
   }, [driver, form]);
@@ -104,7 +101,7 @@ export function DriverForm({ onSubmit, driver }: DriverFormProps) {
           name="contactNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número de Contacto</FormLabel>
+              <FormLabel>Número de Contacto (Opcional)</FormLabel>
               <FormControl>
                 <Input placeholder="+1 234 567 890" {...field} />
               </FormControl>
@@ -114,25 +111,12 @@ export function DriverForm({ onSubmit, driver }: DriverFormProps) {
         />
         <FormField
           control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="john.doe@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name="isActive"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/20">
                 <div className="space-y-0.5">
-                    <FormLabel>Activo</FormLabel>
-                    <FormMessage />
+                    <FormLabel>Conductor Activo</FormLabel>
+                    <p className="text-[10px] text-muted-foreground">Permitir asignación de rutas</p>
                 </div>
                 <FormControl>
                     <Switch
@@ -143,7 +127,7 @@ export function DriverForm({ onSubmit, driver }: DriverFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">{driver ? 'Guardar Cambios' : 'Crear Conductor'}</Button>
+        <Button type="submit" className="w-full font-bold h-11">{driver ? 'Guardar Cambios' : 'Registrar Conductor'}</Button>
       </form>
     </Form>
   );
