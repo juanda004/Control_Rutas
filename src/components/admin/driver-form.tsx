@@ -64,7 +64,7 @@ export function DriverForm({ onSubmit, driver }: DriverFormProps) {
             <FormItem>
               <FormLabel>Nombre Completo</FormLabel>
               <FormControl>
-                <Input placeholder="John Doe" {...field} />
+                <Input placeholder="Nombre del conductor" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
