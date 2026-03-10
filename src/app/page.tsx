@@ -27,13 +27,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/icons";
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Por favor, introduce un email válido." }),
+  email: z.string().email({ message: "Introduce un email válido." }),
   password: z.string().min(1, { message: "La contraseña es obligatoria." }),
 });
 
 export default function LoginPage() {
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -41,10 +43,14 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isUserLoading && user) {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted && !isUserLoading && user) {
       router.replace('/dashboard');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, isMounted]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,37 +65,35 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
-        title: "Inicio de sesión exitoso",
-        description: "¡Bienvenido de vuelta!",
+        title: "Bienvenido",
+        description: "Acceso concedido.",
       });
       router.push("/dashboard");
     } catch (error: any) {
-      console.error(error);
       toast({
         variant: "destructive",
-        title: "Error al iniciar sesión",
-        description: "El email o la contraseña son incorrectos. Por favor, inténtalo de nuevo.",
+        title: "Error",
+        description: "Credenciales incorrectas.",
       });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   }
 
-  if (isUserLoading || user) {
-    return (
-         <div className="min-h-screen bg-background flex items-center justify-center">
-            <p>Cargando...</p>
-        </div>
-    );
-  }
+  // Evitar parpadeo de hidratación: no renderizar nada hasta que el cliente esté listo
+  if (!isMounted) return null;
+
+  // Si ya hay usuario, no mostramos el formulario mientras redirige
+  if (user) return null;
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Acceder a TrackRuta</CardTitle>
+    <main className="flex items-center justify-center min-h-screen bg-background p-4" suppressHydrationWarning>
+      <Card className="w-full max-w-md shadow-xl border-primary/10">
+        <CardHeader className="text-center">
+          <Logo className="h-12 w-12 text-primary mx-auto mb-4" />
+          <CardTitle className="text-2xl font-bold tracking-tight">TrackRuta</CardTitle>
           <CardDescription>
-            Introduce tu email y contraseña para acceder al panel.
+            Acceso al panel de gestión.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -105,6 +109,7 @@ export default function LoginPage() {
                       <Input
                         type="email"
                         placeholder="tu@email.com"
+                        className="bg-muted/30"
                         {...field}
                       />
                     </FormControl>
@@ -122,6 +127,7 @@ export default function LoginPage() {
                       <Input
                         type="password"
                         placeholder="••••••••"
+                        className="bg-muted/30"
                         {...field}
                       />
                     </FormControl>
@@ -132,20 +138,20 @@ export default function LoginPage() {
               <div className="flex items-center justify-end text-sm">
                 <Link
                   href="/forgot-password"
-                  className="underline"
+                  className="text-primary hover:underline font-medium"
                 >
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Accediendo..." : "Acceder"}
+              <Button type="submit" className="w-full h-11 font-bold shadow-lg" disabled={isSubmitting}>
+                {isSubmitting ? "Accediendo..." : "Iniciar Sesión"}
               </Button>
             </form>
           </Form>
 
-          <div className="mt-4 text-center text-sm">
-            ¿No tienes una cuenta?{" "}
-            <Link href="/register" className="underline">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            ¿No tienes cuenta?{" "}
+            <Link href="/register" className="text-primary hover:underline font-bold">
               Registrarse
             </Link>
           </div>

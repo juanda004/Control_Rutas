@@ -1,34 +1,29 @@
+
 {
   "entities": {
     "Driver": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Driver",
       "type": "object",
-      "description": "Represents a driver who performs routes, managed through an administrator panel.",
+      "description": "Representa a un conductor del sistema de rutas escolares.",
       "properties": {
         "id": {
-          "type": "string",
-          "description": "Unique identifier for the Driver entity."
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "description": "The full name of the driver."
+          "type": "string"
         },
         "routeNumber": {
-          "type": "string",
-          "description": "The specific route number assigned to this driver."
+          "type": "string"
         },
         "licensePlate": {
-          "type": "string",
-          "description": "The license plate of the vehicle assigned to this driver."
+          "type": "string"
         },
         "contactNumber": {
-          "type": "string",
-          "description": "The primary contact phone number for the driver."
+          "type": "string"
         },
         "isActive": {
-          "type": "boolean",
-          "description": "Indicates if the driver is currently active."
+          "type": "boolean"
         },
         "createdAt": {
           "type": "string",
@@ -52,7 +47,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "RouteLog",
       "type": "object",
-      "description": "Records the daily check-in and check-out times.",
+      "description": "Registro diario de check-in y check-out de rutas.",
       "properties": {
         "id": {
           "type": "string"
@@ -129,15 +124,15 @@
   "firestore": {
     "/roles_admin/{adminId}": {
       "schema": "adminRole",
-      "description": "Admin roles collection."
+      "description": "Colección de roles de administrador."
     },
     "/drivers/{driverId}": {
       "schema": "Driver",
-      "description": "Drivers collection."
+      "description": "Colección de conductores."
     },
     "/routeLogs/{routeLogId}": {
       "schema": "RouteLog",
-      "description": "Route logs collection."
+      "description": "Colección de registros de ruta."
     }
   }
 }

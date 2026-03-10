@@ -1,3 +1,4 @@
+
 export type Shift = "morning" | "afternoon";
 export type Sede = "Preescolar" | "Bachillerato";
 

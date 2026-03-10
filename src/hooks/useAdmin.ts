@@ -10,11 +10,12 @@ export function useAdmin() {
   const adminRoleRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'roles_admin', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: adminRole, isLoading: isAdminRoleLoading } = useDoc(adminRoleRef);
 
   const isAdmin = !!adminRole;
+  // Solo consideramos que está cargando si el usuario existe y aún no sabemos su rol.
   const isLoading = isUserLoading || (!!user && isAdminRoleLoading);
 
   return { isAdmin, isLoading };

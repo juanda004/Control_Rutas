@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { PlusCircle, Trash2, Edit } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Users } from 'lucide-react';
 import { Driver } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -73,62 +73,74 @@ export function AdminDriverList({ drivers }: AdminDriverListProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Gestionar Conductores</h2>
-                 <Button onClick={openNewDialog}>
+            <div className="flex justify-between items-center px-1">
+                <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    <h2 className="text-xl font-bold tracking-tight">Conductores ({drivers.length})</h2>
+                </div>
+                 <Button onClick={openNewDialog} className="shadow-md">
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Conductor
+                    <span className="hidden sm:inline">Nuevo Conductor</span>
+                    <span className="sm:hidden">Nuevo</span>
                 </Button>
             </div>
 
-            <div className="border rounded-lg bg-card">
+            <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/50">
                         <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead className="hidden md:table-cell">Nº Ruta</TableHead>
-                            <TableHead className="hidden md:table-cell">Matrícula</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
+                            <TableHead className="font-bold">Nombre</TableHead>
+                            <TableHead className="hidden md:table-cell font-bold">Nº Ruta</TableHead>
+                            <TableHead className="hidden md:table-cell font-bold">Matrícula</TableHead>
+                            <TableHead className="font-bold">Estado</TableHead>
+                            <TableHead className="text-right font-bold">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {drivers.map(driver => (
-                            <TableRow key={driver.id}>
-                                <TableCell className="font-medium">{driver.name}</TableCell>
-                                <TableCell className="hidden md:table-cell">{driver.routeNumber}</TableCell>
-                                <TableCell className="hidden md:table-cell">{driver.licensePlate}</TableCell>
-                                <TableCell>
-                                    <Badge variant={driver.isActive ? 'default' : 'secondary'}>
-                                        {driver.isActive ? 'Activo' : 'Inactivo'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right space-x-2">
-                                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(driver)}>
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Esta acción no se puede deshacer. Esto eliminará permanentemente al conductor.
-                                            </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDelete(driver.id)}>Eliminar</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                        {drivers.length > 0 ? (
+                            drivers.map(driver => (
+                                <TableRow key={driver.id} className="hover:bg-muted/30 transition-colors">
+                                    <TableCell className="font-medium">{driver.name}</TableCell>
+                                    <TableCell className="hidden md:table-cell">{driver.routeNumber}</TableCell>
+                                    <TableCell className="hidden md:table-cell font-mono text-xs">{driver.licensePlate}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={driver.isActive ? 'default' : 'secondary'} className="rounded-md">
+                                            {driver.isActive ? 'Activo' : 'Inactivo'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right space-x-1">
+                                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(driver)} className="h-8 w-8">
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-8 w-8">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                <AlertDialogTitle>¿Eliminar conductor?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Esta acción no se puede deshacer. Se eliminará a <strong>{driver.name}</strong> del sistema.
+                                                </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(driver.id)} className="bg-destructive hover:bg-destructive/90">Eliminar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                    No se encontraron conductores.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )}
                     </TableBody>
                 </Table>
             </div>
@@ -137,7 +149,7 @@ export function AdminDriverList({ drivers }: AdminDriverListProps) {
                 setIsFormOpen(isOpen);
                 if (!isOpen) setEditingDriver(null);
             }}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>{editingDriver ? 'Editar Conductor' : 'Añadir Nuevo Conductor'}</DialogTitle>
                     </DialogHeader>

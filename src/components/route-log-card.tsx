@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -8,10 +9,8 @@ import {
   LogOut,
   FileSignature,
   Clock,
-  User,
   Map,
   RectangleHorizontal,
-  BookText,
   CheckCircle2,
   Trash2,
 } from "lucide-react";
@@ -91,19 +90,14 @@ const TimeLog = ({
     {signature &&
       (signature.startsWith("data:image") ? (
         <div className="flex flex-col items-end">
-          <span className="text-xs text-muted-foreground">Firmado:</span>
+          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Firmado</span>
           <img
             src={signature}
             alt="Firma"
-            className="h-10 w-24 object-contain invert-0 dark:invert"
+            className="h-8 w-16 object-contain"
           />
         </div>
-      ) : (
-        <div className="flex items-center text-xs">
-          <FileSignature className="h-3 w-3 mr-1" />
-          <span>{signature}</span>
-        </div>
-      ))}
+      ) : null)}
   </div>
 );
 
@@ -140,40 +134,36 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
     deleteDocumentNonBlocking(doc(firestore, 'routeLogs', log.id));
   }
 
-  const isMorningComplete = log.morningCheckIn && log.morningCheckOut && log.morningSignature;
-  const isAfternoonComplete = log.afternoonCheckIn && log.afternoonCheckOut && log.afternoonSignature;
+  const isMorningComplete = log.morningCheckIn && log.morningSignature && log.morningCheckOut;
 
   const getStatus = () => {
-    if (!log.morningCheckIn) return { text: "Pendiente de Inicio", variant: "outline" as const };
-    if (!log.morningCheckOut) return { text: "Turno Mañana Activo", variant: "default" as const };
-    if (!log.morningSignature) return { text: "Turno Mañana Finalizado", variant: "secondary" as const };
-    if (!log.afternoonCheckIn) return { text: "Esperando Turno Tarde", variant: "outline" as const };
-    if (!log.afternoonCheckOut) return { text: "Turno Tarde Activo", variant: "default" as const };
-    if (!log.afternoonSignature) return { text: "Turno Tarde Finalizado", variant: "secondary" as const };
-    return { text: "Completado", variant: "default" as const, completed: true };
+    if (!log.morningCheckIn) return { text: "Turno Mañana Pendiente", variant: "outline" as const };
+    if (!log.morningSignature) return { text: "Firma Mañana Pendiente", variant: "secondary" as const };
+    if (!log.morningCheckOut) return { text: "Mañana: En Curso", variant: "default" as const };
+    if (!log.afternoonCheckIn) return { text: "Turno Tarde Pendiente", variant: "outline" as const };
+    if (!log.afternoonSignature) return { text: "Firma Tarde Pendiente", variant: "secondary" as const };
+    if (!log.afternoonCheckOut) return { text: "Tarde: En Curso", variant: "default" as const };
+    return { text: "Ruta Completada", variant: "default" as const, completed: true };
   };
 
   const status = getStatus();
 
   return (
-    <Card className={`flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 ${status.completed ? 'bg-green-50' : 'bg-card'}`}>
-      <CardHeader>
+    <Card className={`flex flex-col shadow-md hover:shadow-lg transition-all duration-300 ${status.completed ? 'bg-green-50/50 border-green-200' : 'bg-card'}`}>
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
             <div>
-                <CardTitle className="flex items-center gap-2">
-                    <Map className="text-primary"/> 
+                <CardTitle className="flex items-center gap-2 text-lg">
+                    <Map className="h-5 w-5 text-primary"/> 
                     Ruta {log.routeNumber}
                 </CardTitle>
-                <CardDescription>Conductor: {log.driver?.name || log.driverId}</CardDescription>
+                <CardDescription className="text-xs">Conductor: {log.driver?.name || "Sin asignar"}</CardDescription>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2 flex-wrap justify-end">
-                <Badge variant="outline" className="text-xs">{log.sede}</Badge>
-                <Badge variant={status.variant} className="text-xs">
-                    {status.completed && <CheckCircle2 className="mr-1.5 h-3.5 w-3.5"/>}
-                    {status.text}
-                </Badge>
-              </div>
+              <Badge variant={status.variant} className="text-[10px] px-2 py-0.5 whitespace-nowrap font-bold">
+                  {status.completed && <CheckCircle2 className="mr-1 h-3 w-3"/>}
+                  {status.text}
+              </Badge>
               {isAdmin && (
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -185,12 +175,12 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
                         <AlertDialogHeader>
                         <AlertDialogTitle>¿Eliminar este registro?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción no se puede deshacer. Esto eliminará permanentemente el registro de ruta para <strong>{log.driver?.name}</strong> en la fecha <strong>{format(new Date(log.logDate.replace(/-/g, '/')), "d/MM/yy")}</strong>.
+                            Esta acción eliminará permanentemente el registro de ruta.
                         </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete}>Eliminar</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Eliminar</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
@@ -198,40 +188,40 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
             </div>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 pt-4">
-          <InfoItem icon={User} label="Conductor" value={log.driver?.name} />
+        <div className="grid grid-cols-1 gap-1 mt-3">
           <InfoItem icon={RectangleHorizontal} label="Matrícula" value={log.licensePlate} />
+          <Badge variant="outline" className="w-fit text-[10px] bg-muted/30">{log.sede}</Badge>
         </div>
-         {log.morningObservations && (
-          <div className="pt-2">
-            <p className="text-xs font-bold text-muted-foreground">Obs. Mañana:</p>
-            <div className="flex items-start text-sm text-muted-foreground">
-                <BookText className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <p className="border-l-2 pl-3 text-sm italic">"{log.morningObservations}"</p>
-            </div>
-          </div>
-        )}
       </CardHeader>
-      <CardContent className="flex-grow space-y-4">
+      
+      <CardContent className="flex-grow space-y-4 pt-0">
+        <Separator />
+        
         {/* Morning Shift */}
         <div className="space-y-3">
-          <h4 className="font-semibold">Turno Mañana</h4>
-          <TimeLog label="Check-in" timestamp={log.morningCheckIn} />
-          <TimeLog label="Check-out" timestamp={log.morningCheckOut} signature={log.morningSignature} />
-          <div className="flex gap-2 justify-end flex-wrap">
+          <h4 className="text-sm font-bold flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-orange-400" />
+              Turno Mañana
+          </h4>
+          <div className="space-y-2 bg-muted/20 p-3 rounded-lg border border-dashed">
+            <TimeLog label="Entrada" timestamp={log.morningCheckIn} signature={log.morningSignature} />
+            <TimeLog label="Salida" timestamp={log.morningCheckOut} />
+          </div>
+
+          <div className="flex gap-2 justify-end">
             {!log.morningCheckIn && (
-              <Button size="sm" onClick={() => handleTimeUpdate("morning", "CheckIn")}>
-                <LogIn className="mr-2 h-4 w-4" /> Check-In Mañana
+              <Button size="sm" className="h-8 text-xs font-bold" onClick={() => handleTimeUpdate("morning", "CheckIn")}>
+                <LogIn className="mr-2 h-3 w-3" /> Marcar Entrada
               </Button>
             )}
-            {log.morningCheckIn && !log.morningCheckOut && (
-              <Button size="sm" onClick={() => handleTimeUpdate("morning", "CheckOut")}>
-                <LogOut className="mr-2 h-4 w-4" /> Check-Out Mañana
+            {log.morningCheckIn && !log.morningSignature && (
+              <Button size="sm" variant="secondary" className="h-8 text-xs font-bold" onClick={() => setSignatureShift("morning")}>
+                <FileSignature className="mr-2 h-3 w-3" /> Registrar Firma
               </Button>
             )}
-            {log.morningCheckOut && !log.morningSignature && (
-              <Button size="sm" onClick={() => setSignatureShift("morning")}>
-                <FileSignature className="mr-2 h-4 w-4" /> Firmar
+            {log.morningCheckIn && log.morningSignature && !log.morningCheckOut && (
+              <Button size="sm" variant="default" className="h-8 text-xs font-bold bg-primary shadow-sm" onClick={() => handleTimeUpdate("morning", "CheckOut")}>
+                <LogOut className="mr-2 h-3 w-3" /> Marcar Salida
               </Button>
             )}
           </div>
@@ -240,54 +230,52 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
         <Separator />
 
         {/* Afternoon Shift */}
-        <div className={`space-y-3 ${!isMorningComplete ? 'opacity-50 pointer-events-none' : ''}`}>
-          <h4 className="font-semibold">Turno Tarde</h4>
-          {isMorningComplete && !log.afternoonSignature && (
-            <div className="space-y-2">
-                <Label htmlFor={`afternoon-obs-${log.id}`} className="text-xs font-bold text-muted-foreground">Obs. Tarde:</Label>
+        <div className={`space-y-3 ${!isMorningComplete ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
+          <h4 className="text-sm font-bold flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-blue-400" />
+              Turno Tarde
+          </h4>
+          
+          {!log.afternoonSignature && isMorningComplete && (
+            <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Observaciones Tarde</Label>
                 <Textarea
-                    id={`afternoon-obs-${log.id}`}
-                    placeholder="Notas sobre el turno de tarde..."
+                    placeholder="Reportar novedades o incidentes..."
                     value={afternoonObs}
                     onChange={(e) => setAfternoonObs(e.target.value)}
-                    className="resize-none"
-                    disabled={!!log.afternoonSignature}
+                    className="text-xs min-h-[60px] resize-none focus:ring-primary/20"
                 />
             </div>
           )}
-          {log.afternoonObservations && !!log.afternoonSignature && (
-             <div className="pt-2">
-                <p className="text-xs font-bold text-muted-foreground">Obs. Tarde:</p>
-                <div className="flex items-start text-sm text-muted-foreground">
-                    <BookText className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                    <p className="border-l-2 pl-3 text-sm italic">"{log.afternoonObservations}"</p>
-                </div>
-            </div>
-          )}
-          <TimeLog label="Check-in" timestamp={log.afternoonCheckIn} />
-          <TimeLog label="Check-out" timestamp={log.afternoonCheckOut} signature={log.afternoonSignature}/>
-          <div className="flex gap-2 justify-end flex-wrap">
+
+          <div className="space-y-2 bg-muted/20 p-3 rounded-lg border border-dashed">
+            <TimeLog label="Entrada" timestamp={log.afternoonCheckIn} signature={log.afternoonSignature} />
+            <TimeLog label="Salida" timestamp={log.afternoonCheckOut} />
+          </div>
+
+          <div className="flex gap-2 justify-end">
              {isMorningComplete && !log.afternoonCheckIn && (
-              <Button size="sm" onClick={() => handleTimeUpdate("afternoon", "CheckIn")}>
-                <LogIn className="mr-2 h-4 w-4" /> Check-In Tarde
+              <Button size="sm" className="h-8 text-xs font-bold" onClick={() => handleTimeUpdate("afternoon", "CheckIn")}>
+                <LogIn className="mr-2 h-3 w-3" /> Marcar Entrada
               </Button>
             )}
-            {log.afternoonCheckIn && !log.afternoonCheckOut && (
-              <Button size="sm" onClick={() => handleTimeUpdate("afternoon", "CheckOut")}>
-                <LogOut className="mr-2 h-4 w-4" /> Check-Out Tarde
+            {log.afternoonCheckIn && !log.afternoonSignature && (
+              <Button size="sm" variant="secondary" className="h-8 text-xs font-bold" onClick={() => setSignatureShift("afternoon")}>
+                <FileSignature className="mr-2 h-3 w-3" /> Registrar Firma
               </Button>
             )}
-            {log.afternoonCheckOut && !log.afternoonSignature && (
-              <Button size="sm" onClick={() => setSignatureShift("afternoon")}>
-                <FileSignature className="mr-2 h-4 w-4" /> Firmar
+            {log.afternoonCheckIn && log.afternoonSignature && !log.afternoonCheckOut && (
+              <Button size="sm" variant="default" className="h-8 text-xs font-bold bg-primary shadow-sm" onClick={() => handleTimeUpdate("afternoon", "CheckOut")}>
+                <LogOut className="mr-2 h-3 w-3" /> Marcar Salida
               </Button>
             )}
           </div>
         </div>
       </CardContent>
-      <CardFooter>
-        <p className="text-xs text-muted-foreground w-full text-center">
-            Fecha: {format(new Date(log.logDate.replace(/-/g, '/')), "d 'de' MMMM, yyyy", { locale: es })}
+      
+      <CardFooter className="bg-muted/10 py-3 border-t">
+        <p className="text-[10px] text-muted-foreground w-full text-center font-medium">
+            Registrado el {format(new Date(log.logDate.replace(/-/g, '/')), "d 'de' MMMM, yyyy", { locale: es })}
         </p>
       </CardFooter>
 
