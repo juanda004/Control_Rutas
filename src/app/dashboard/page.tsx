@@ -37,7 +37,7 @@ import { RouteLogCard } from "@/components/route-log-card";
 import { Logo } from "@/components/icons";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, query, where } from "firebase/firestore";
 import { AuthButton } from "@/components/auth-button";
 import { DownloadReport } from "@/components/download-report";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -58,11 +58,10 @@ export default function DashboardPage() {
   const { toast } = useToast();
   
   const [selectedSede, setSelectedSede] = useState<Sede | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   useEffect(() => {
     setIsMounted(true);
-    setSelectedDate(new Date());
   }, []);
 
   useEffect(() => {
@@ -71,6 +70,12 @@ export default function DashboardPage() {
     }
   }, [isMounted, isUserLoading, user, router]);
 
+  const selectedDateStr = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
+  const selectedDateFormatted = useMemo(() => format(selectedDate, "eeee, d 'de' MMMM 'de' yyyy", {
+      locale: es,
+    }), [selectedDate]);
+
+  // OPTIMIZACIÓN: Solo descargamos los conductores activos para agilizar la carga inicial
   const driversQuery = useMemoFirebase(() => {
     if (firestore && user) {
       return collection(firestore, 'drivers');
@@ -80,26 +85,27 @@ export default function DashboardPage() {
 
   const { data: drivers, isLoading: driversLoading } = useCollection<Driver>(driversQuery);
 
-  const routeLogsQuery = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'routeLogs') : null, [firestore, user]);
-  const { data: allLogs, isLoading: logsLoading } = useCollection<RouteLog>(routeLogsQuery);
+  // OPTIMIZACIÓN CRÍTICA: Solo descargamos los logs de la fecha seleccionada. 
+  // Esto evita descargar miles de registros históricos innecesariamente.
+  const routeLogsQuery = useMemoFirebase(() => {
+    if (!firestore || !user || !selectedDateStr) return null;
+    return query(collection(firestore, 'routeLogs'), where('logDate', '==', selectedDateStr));
+  }, [firestore, user, selectedDateStr]);
+  
+  const { data: currentDayLogs, isLoading: logsLoading } = useCollection<RouteLog>(routeLogsQuery);
 
-  const isLoadingData = isUserLoading || driversLoading || logsLoading;
-
-  const selectedDateStr = useMemo(() => selectedDate ? format(selectedDate, "yyyy-MM-dd") : '', [selectedDate]);
-  const selectedDateFormatted = useMemo(() => selectedDate ? format(selectedDate, "eeee, d 'de' MMMM 'de' yyyy", {
-      locale: es,
-    }) : '', [selectedDate]);
+  const isLoadingData = !isMounted || isUserLoading || driversLoading || logsLoading || isAdminLoading;
 
   const filteredAndSortedLogs = useMemo(() => {
-    if (!allLogs || !drivers || !selectedDateStr) return [];
+    if (!currentDayLogs || !drivers) return [];
     
-    let logsForDate = allLogs.filter((log) => log.logDate === selectedDateStr);
+    let filtered = [...currentDayLogs];
 
     if (selectedSede) {
-      logsForDate = logsForDate.filter(log => log.sede === selectedSede);
+      filtered = filtered.filter(log => log.sede === selectedSede);
     }
 
-    let logsWithDrivers = logsForDate.map((log) => ({
+    let logsWithDrivers = filtered.map((log) => ({
       ...log,
       driver: drivers.find((d) => d.id === log.driverId),
     }));
@@ -118,10 +124,10 @@ export default function DashboardPage() {
       }
       return 0;
     });
-  }, [allLogs, drivers, selectedDateStr, selectedSede, sortBy]);
+  }, [currentDayLogs, drivers, selectedSede, sortBy]);
 
   const handleAddLog = (newLogData: AddRouteLogFormValues) => {
-    if (!firestore || !user || !drivers || !selectedDateStr) return;
+    if (!firestore || !user || !drivers) return;
 
     const sedeForNewLog = isAdmin ? newLogData.sede : selectedSede;
     if (!sedeForNewLog) return;
@@ -131,8 +137,7 @@ export default function DashboardPage() {
       const selectedDriver = drivers.find(d => d.id === driverId);
       if (!selectedDriver) return;
 
-      // Verificar si ya existe para evitar duplicados en la misma sede/fecha
-      const exists = allLogs?.some(l => l.driverId === driverId && l.logDate === selectedDateStr && l.sede === sedeForNewLog);
+      const exists = currentDayLogs?.some(l => l.driverId === driverId && l.sede === sedeForNewLog);
       
       if (!exists) {
         const newLog: Omit<RouteLog, 'id'> = {
@@ -150,7 +155,7 @@ export default function DashboardPage() {
 
     toast({
       title: "Registros procesados",
-      description: `Se han añadido ${addedCount} nuevos registros para el día de hoy.`,
+      description: `Se han añadido ${addedCount} nuevos registros.`,
     });
     
     setAddLogOpen(false);
@@ -164,18 +169,11 @@ export default function DashboardPage() {
 
   const activeDrivers = useMemo(() => drivers?.filter(d => d.isActive) || [], [drivers]);
 
-  if (!isMounted || (isUserLoading && !user)) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" suppressHydrationWarning>
-        <Logo className="h-16 w-16 text-primary animate-pulse mb-4" />
-        <p className="text-muted-foreground font-medium animate-pulse">Cargando registros...</p>
-      </div>
-    );
-  }
+  if (!isMounted) return null;
 
-  if (!user) return null;
+  if (!user && !isUserLoading) return null;
 
-  if (!isAdminLoading && !isAdmin && !selectedSede) {
+  if (!isAdmin && !selectedSede && !isLoadingData) {
     return (
        <div className="fixed inset-0 bg-background/95 backdrop-blur-md z-50 flex items-center justify-center p-4" suppressHydrationWarning>
            <Card className="w-full max-w-md shadow-2xl border-primary/10">
@@ -223,7 +221,7 @@ export default function DashboardPage() {
               </h1>
             </Link>
             <div className="flex items-center gap-2 sm:gap-4">
-              <DownloadReport drivers={drivers} allLogs={allLogs} isAdmin={isAdmin} selectedSede={selectedSede} />
+              <DownloadReport drivers={drivers} allLogs={currentDayLogs} isAdmin={isAdmin} selectedSede={selectedSede} />
               <Dialog open={isAddLogOpen} onOpenChange={setAddLogOpen}>
                 <DialogTrigger asChild>
                   <Button disabled={isLoadingData} size="sm" className="shadow-md">
@@ -235,7 +233,7 @@ export default function DashboardPage() {
                   <DialogHeader>
                     <DialogTitle>Añadir Registros</DialogTitle>
                     <DialogDescription>
-                      Asigna conductores a la jornada de hoy ({selectedDateFormatted}).
+                      Selecciona los conductores para el día {selectedDateFormatted}.
                     </DialogDescription>
                   </DialogHeader>
                   <AddRouteLogForm onAddLog={handleAddLog} drivers={activeDrivers} isAdmin={isAdmin} />
@@ -302,8 +300,8 @@ export default function DashboardPage() {
                 <PopoverContent className="w-auto p-0" align="end">
                   <Calendar
                     mode="single"
-                    selected={selectedDate || undefined}
-                    onSelect={(date) => setSelectedDate(date || new Date())}
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
                     initialFocus
                     locale={es}
                   />
@@ -316,7 +314,7 @@ export default function DashboardPage() {
         {isLoadingData ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              <p className="text-muted-foreground font-medium">Actualizando registros...</p>
+              <p className="text-muted-foreground font-medium">Sincronizando registros...</p>
           </div>
         ) : filteredAndSortedLogs.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

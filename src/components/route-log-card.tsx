@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -9,10 +9,12 @@ import {
   LogOut,
   FileSignature,
   Clock,
-  Map,
-  RectangleHorizontal,
   CheckCircle2,
   Trash2,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  Save,
 } from "lucide-react";
 import { type RouteLogWithDriver, type Shift, type RouteLog } from "@/app/lib/types";
 import {
@@ -44,27 +46,17 @@ import {
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { doc } from "firebase/firestore";
 import { useFirestore } from "@/firebase";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { useToast } from "@/hooks/use-toast";
 
 interface RouteLogCardProps {
   log: RouteLogWithDriver;
   onUpdate: (log: RouteLog) => void;
 }
-
-const InfoItem = ({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value?: string;
-}) => (
-  <div className="flex items-center text-sm text-muted-foreground">
-    <Icon className="h-4 w-4 mr-2" />
-    <span className="font-medium">{label}:</span>
-    <span className="ml-1 text-foreground">{value || "N/A"}</span>
-  </div>
-);
 
 const TimeLog = ({
   label,
@@ -103,9 +95,18 @@ const TimeLog = ({
 
 export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
   const [signatureShift, setSignatureShift] = useState<Shift | null>(null);
+  const [morningObs, setMorningObs] = useState(log.morningObservations || "");
   const [afternoonObs, setAfternoonObs] = useState(log.afternoonObservations || "");
+  const [isObsExpanded, setIsObsExpanded] = useState(false);
   const { isAdmin } = useAdmin();
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  // Sincronizar estados locales cuando el log cambie externamente
+  useEffect(() => {
+    setMorningObs(log.morningObservations || "");
+    setAfternoonObs(log.afternoonObservations || "");
+  }, [log.morningObservations, log.afternoonObservations]);
 
   const handleTimeUpdate = (
     shift: Shift,
@@ -118,15 +119,25 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
   const handleSaveSignature = (signature: string) => {
     if (signatureShift) {
       const signatureKey = `${signatureShift}Signature` as keyof RouteLog;
-      let updatedLog: RouteLog = { ...log, [signatureKey]: signature };
-
-      if (signatureShift === 'afternoon') {
-        updatedLog.afternoonObservations = afternoonObs;
-      }
-      
-      onUpdate(updatedLog);
+      onUpdate({ ...log, [signatureKey]: signature });
       setSignatureShift(null);
     }
+  };
+
+  const handleSaveMorningObs = () => {
+    onUpdate({ ...log, morningObservations: morningObs });
+    toast({
+      title: "Observaciones guardadas",
+      description: "Las notas de la mañana han sido actualizadas.",
+    });
+  };
+
+  const handleSaveAfternoonObs = () => {
+    onUpdate({ ...log, afternoonObservations: afternoonObs });
+    toast({
+      title: "Observaciones guardadas",
+      description: "Las notas de la tarde han sido actualizadas.",
+    });
   };
 
   const handleDelete = () => {
@@ -137,13 +148,13 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
   const isMorningComplete = log.morningCheckIn && log.morningSignature && log.morningCheckOut;
 
   const getStatus = () => {
-    if (!log.morningCheckIn) return { text: "Turno Mañana Pendiente", variant: "outline" as const };
-    if (!log.morningSignature) return { text: "Firma Mañana Pendiente", variant: "secondary" as const };
+    if (!log.morningCheckIn) return { text: "Mañana: Pendiente", variant: "outline" as const };
+    if (!log.morningSignature) return { text: "Mañana: Firma", variant: "secondary" as const };
     if (!log.morningCheckOut) return { text: "Mañana: En Curso", variant: "default" as const };
-    if (!log.afternoonCheckIn) return { text: "Turno Tarde Pendiente", variant: "outline" as const };
-    if (!log.afternoonSignature) return { text: "Firma Tarde Pendiente", variant: "secondary" as const };
+    if (!log.afternoonCheckIn) return { text: "Tarde: Pendiente", variant: "outline" as const };
+    if (!log.afternoonSignature) return { text: "Tarde: Firma", variant: "secondary" as const };
     if (!log.afternoonCheckOut) return { text: "Tarde: En Curso", variant: "default" as const };
-    return { text: "Ruta Completada", variant: "default" as const, completed: true };
+    return { text: "Completada", variant: "default" as const, completed: true };
   };
 
   const status = getStatus();
@@ -154,10 +165,13 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
         <div className="flex justify-between items-start">
             <div>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                    <Map className="h-5 w-5 text-primary"/> 
-                    Ruta {log.routeNumber}
+                    <Badge variant="default" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 font-mono">
+                      Ruta {log.routeNumber}
+                    </Badge>
                 </CardTitle>
-                <CardDescription className="text-xs">Conductor: {log.driver?.name || "Sin asignar"}</CardDescription>
+                <CardDescription className="text-xs font-medium mt-1">
+                  {log.driver?.name || "Conductor sin asignar"}
+                </CardDescription>
             </div>
             <div className="flex flex-col items-end gap-2">
               <Badge variant={status.variant} className="text-[10px] px-2 py-0.5 whitespace-nowrap font-bold">
@@ -188,9 +202,9 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
             </div>
         </div>
         
-        <div className="grid grid-cols-1 gap-1 mt-3">
-          <InfoItem icon={RectangleHorizontal} label="Matrícula" value={log.licensePlate} />
-          <Badge variant="outline" className="w-fit text-[10px] bg-muted/30">{log.sede}</Badge>
+        <div className="flex items-center gap-2 mt-3">
+          <Badge variant="outline" className="text-[10px] bg-muted/30 font-mono">{log.licensePlate}</Badge>
+          <Badge variant="outline" className="text-[10px] bg-muted/30">{log.sede}</Badge>
         </div>
       </CardHeader>
       
@@ -236,18 +250,6 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
               Turno Tarde
           </h4>
           
-          {!log.afternoonSignature && isMorningComplete && (
-            <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Observaciones Tarde</Label>
-                <Textarea
-                    placeholder="Reportar novedades o incidentes..."
-                    value={afternoonObs}
-                    onChange={(e) => setAfternoonObs(e.target.value)}
-                    className="text-xs min-h-[60px] resize-none focus:ring-primary/20"
-                />
-            </div>
-          )}
-
           <div className="space-y-2 bg-muted/20 p-3 rounded-lg border border-dashed">
             <TimeLog label="Entrada" timestamp={log.afternoonCheckIn} signature={log.afternoonSignature} />
             <TimeLog label="Salida" timestamp={log.afternoonCheckOut} />
@@ -271,6 +273,64 @@ export function RouteLogCard({ log, onUpdate }: RouteLogCardProps) {
             )}
           </div>
         </div>
+
+        <Separator />
+
+        {/* Observations Section (Desplegable y Editable) */}
+        <Collapsible open={isObsExpanded} onOpenChange={setIsObsExpanded} className="w-full">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full justify-between h-8 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-3 w-3" />
+                Gestionar Observaciones
+              </div>
+              {isObsExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 pt-4 animate-in fade-in-0 slide-in-from-top-1">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-orange-500">Observaciones Mañana</Label>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6 text-primary hover:bg-primary/5" 
+                  onClick={handleSaveMorningObs}
+                  title="Guardar notas mañana"
+                >
+                  <Save className="h-3 w-3" />
+                </Button>
+              </div>
+              <Textarea
+                placeholder="Notas de la mañana..."
+                value={morningObs}
+                onChange={(e) => setMorningObs(e.target.value)}
+                className="text-xs min-h-[60px] resize-none focus:ring-orange-200 border-orange-100 bg-orange-50/20"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-blue-500">Observaciones Tarde</Label>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6 text-primary hover:bg-primary/5" 
+                  onClick={handleSaveAfternoonObs}
+                  title="Guardar notas tarde"
+                >
+                  <Save className="h-3 w-3" />
+                </Button>
+              </div>
+              <Textarea
+                placeholder="Notas de la tarde..."
+                value={afternoonObs}
+                onChange={(e) => setAfternoonObs(e.target.value)}
+                className="text-xs min-h-[60px] resize-none focus:ring-blue-200 border-blue-100 bg-blue-50/20"
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
       
       <CardFooter className="bg-muted/10 py-3 border-t">
