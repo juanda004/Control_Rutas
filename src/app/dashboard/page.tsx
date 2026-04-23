@@ -75,7 +75,6 @@ export default function DashboardPage() {
       locale: es,
     }), [selectedDate]);
 
-  // OPTIMIZACIÓN: Solo descargamos los conductores activos para agilizar la carga inicial
   const driversQuery = useMemoFirebase(() => {
     if (firestore && user) {
       return collection(firestore, 'drivers');
@@ -85,8 +84,6 @@ export default function DashboardPage() {
 
   const { data: drivers, isLoading: driversLoading } = useCollection<Driver>(driversQuery);
 
-  // OPTIMIZACIÓN CRÍTICA: Solo descargamos los logs de la fecha seleccionada. 
-  // Esto evita descargar miles de registros históricos innecesariamente.
   const routeLogsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !selectedDateStr) return null;
     return query(collection(firestore, 'routeLogs'), where('logDate', '==', selectedDateStr));
@@ -169,45 +166,18 @@ export default function DashboardPage() {
 
   const activeDrivers = useMemo(() => drivers?.filter(d => d.isActive) || [], [drivers]);
 
-  if (!isMounted) return null;
-
-  if (!user && !isUserLoading) return null;
-
-  if (!isAdmin && !selectedSede && !isLoadingData) {
+  // Pantalla de carga integrada para evitar el blanco total
+  if (!isMounted || (isUserLoading && !user)) {
     return (
-       <div className="fixed inset-0 bg-background/95 backdrop-blur-md z-50 flex items-center justify-center p-4" suppressHydrationWarning>
-           <Card className="w-full max-w-md shadow-2xl border-primary/10">
-               <CardHeader className="text-center space-y-4">
-                   <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                    <MapPin className="h-8 w-8 text-primary" />
-                   </div>
-                   <CardTitle className="text-2xl font-bold">Seleccionar Sede</CardTitle>
-                   <CardDescription>
-                       Elige la sede en la que realizarás los registros hoy.
-                   </CardDescription>
-               </CardHeader>
-               <CardContent className="flex flex-col gap-4 pt-4">
-                   <Button 
-                    onClick={() => setSelectedSede("Preescolar")} 
-                    size="lg" 
-                    className="w-full h-16 text-lg font-bold shadow-lg transition-transform hover:scale-[1.02]"
-                    variant="outline"
-                   >
-                    Sede Preescolar
-                   </Button>
-                   <Button 
-                    onClick={() => setSelectedSede("Bachillerato")} 
-                    size="lg" 
-                    className="w-full h-16 text-lg font-bold shadow-lg transition-transform hover:scale-[1.02]"
-                    variant="outline"
-                   >
-                    Sede Bachillerato
-                   </Button>
-               </CardContent>
-           </Card>
-       </div>
-    )
+      <div className="flex flex-col min-h-screen bg-background items-center justify-center p-4">
+        <Logo className="h-12 w-12 text-primary animate-pulse mb-4" />
+        <p className="text-muted-foreground font-medium animate-pulse">Cargando TrackRuta...</p>
+      </div>
+    );
   }
+
+  // Si no hay usuario y ya terminó de cargar, la redirección del useEffect se encargará
+  if (!user) return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-background" suppressHydrationWarning>
@@ -244,7 +214,42 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
-      <main className="flex-1 container mx-auto p-4 sm:p-6 lg:p-8">
+      
+      <main className="flex-1 container mx-auto p-4 sm:p-6 lg:p-8 relative">
+        {!isAdmin && !selectedSede && !isLoadingData && (
+          <div className="fixed inset-0 bg-background/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <Card className="w-full max-w-md shadow-2xl border-primary/10">
+                  <CardHeader className="text-center space-y-4">
+                      <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                       <MapPin className="h-8 w-8 text-primary" />
+                      </div>
+                      <CardTitle className="text-2xl font-bold">Seleccionar Sede</CardTitle>
+                      <CardDescription>
+                          Elige la sede en la que realizarás los registros hoy.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-4 pt-4">
+                      <Button 
+                       onClick={() => setSelectedSede("Preescolar")} 
+                       size="lg" 
+                       className="w-full h-16 text-lg font-bold shadow-lg transition-transform hover:scale-[1.02]"
+                       variant="outline"
+                      >
+                       Sede Preescolar
+                      </Button>
+                      <Button 
+                       onClick={() => setSelectedSede("Bachillerato")} 
+                       size="lg" 
+                       className="w-full h-16 text-lg font-bold shadow-lg transition-transform hover:scale-[1.02]"
+                       variant="outline"
+                      >
+                       Sede Bachillerato
+                      </Button>
+                  </CardContent>
+              </Card>
+          </div>
+        )}
+
         <div className="mb-8 space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-1">
@@ -258,6 +263,7 @@ export default function DashboardPage() {
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="flex items-center gap-2 bg-card border rounded-md px-3 h-10 shadow-sm border-primary/10">
+                <ArrowUpDown className="h-4 w-4 text-primary shrink-0" />
                 <ArrowUpDown className="h-4 w-4 text-primary shrink-0" />
                 <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
                   <SelectTrigger className="border-0 bg-transparent shadow-none focus:ring-0 w-[140px] p-0 h-auto font-medium">

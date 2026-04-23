@@ -59,7 +59,7 @@ export default function AdminPage() {
 
     if (!isMounted || (isUserLoading && !user)) {
         return (
-            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" suppressHydrationWarning>
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
                 <Logo className="h-16 w-16 text-primary animate-pulse mb-4" />
                 <p className="text-muted-foreground font-medium animate-pulse">Verificando acceso...</p>
             </div>
@@ -110,7 +110,7 @@ export default function AdminPage() {
                     </div>
                 </div>
             </header>
-            <main className="container mx-auto p-4 sm:p-6 lg:p-8" suppressHydrationWarning>
+            <main className="container mx-auto p-4 sm:p-6 lg:p-8">
                 <div className="max-w-5xl mx-auto space-y-6">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card border border-primary/10 p-4 rounded-2xl shadow-sm">
                         <div className="text-sm text-muted-foreground font-medium">Gestiona la flota de conductores y la configuración de rutas.</div>
