@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { PlusCircle, Calendar as CalendarIcon, MapPin, ArrowUpDown, Loader2 } from "lucide-react";
+import { PlusCircle, Calendar as CalendarIcon, MapPin, ArrowUpDown, Loader2, Search, X, Settings2 } from "lucide-react";
 import Link from 'next/link';
 
 import { type Driver, type RouteLog, type Sede } from "@/app/lib/types";
@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { AddRouteLogForm, type AddRouteLogFormValues } from "@/components/add-route-log-form";
 import { RouteLogCard } from "@/components/route-log-card";
 import { Logo } from "@/components/icons";
@@ -51,6 +52,7 @@ export default function DashboardPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [isAddLogOpen, setAddLogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("route");
+  const [routeSearch, setRouteSearch] = useState("");
   const router = useRouter();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -91,7 +93,8 @@ export default function DashboardPage() {
   
   const { data: currentDayLogs, isLoading: logsLoading } = useCollection<RouteLog>(routeLogsQuery);
 
-  const isLoadingData = !isMounted || isUserLoading || driversLoading || logsLoading || isAdminLoading;
+  const isLoadingSession = !isMounted || isUserLoading || isAdminLoading;
+  const isLoadingData = driversLoading || logsLoading;
 
   const filteredAndSortedLogs = useMemo(() => {
     if (!currentDayLogs || !drivers) return [];
@@ -100,6 +103,15 @@ export default function DashboardPage() {
 
     if (selectedSede) {
       filtered = filtered.filter(log => log.sede === selectedSede);
+    }
+
+    if (routeSearch) {
+      const searchTerms = routeSearch.toLowerCase().split(',').map(t => t.trim()).filter(t => t !== "");
+      if (searchTerms.length > 0) {
+        filtered = filtered.filter(log => 
+          searchTerms.some(term => log.routeNumber.toLowerCase().includes(term))
+        );
+      }
     }
 
     let logsWithDrivers = filtered.map((log) => ({
@@ -121,7 +133,7 @@ export default function DashboardPage() {
       }
       return 0;
     });
-  }, [currentDayLogs, drivers, selectedSede, sortBy]);
+  }, [currentDayLogs, drivers, selectedSede, sortBy, routeSearch]);
 
   const handleAddLog = (newLogData: AddRouteLogFormValues) => {
     if (!firestore || !user || !drivers) return;
@@ -166,18 +178,30 @@ export default function DashboardPage() {
 
   const activeDrivers = useMemo(() => drivers?.filter(d => d.isActive) || [], [drivers]);
 
-  // Pantalla de carga integrada para evitar el blanco total
-  if (!isMounted || (isUserLoading && !user)) {
+  // Si estamos cargando la sesión inicial (incluyendo el refresco)
+  if (isLoadingSession) {
     return (
       <div className="flex flex-col min-h-screen bg-background items-center justify-center p-4">
-        <Logo className="h-12 w-12 text-primary animate-pulse mb-4" />
-        <p className="text-muted-foreground font-medium animate-pulse">Cargando TrackRuta...</p>
+        <Logo className="h-16 w-16 text-primary animate-pulse mb-4" />
+        <div className="space-y-2 text-center">
+            <h3 className="text-xl font-bold text-primary tracking-tight">TrackRuta</h3>
+            <p className="text-muted-foreground font-medium animate-pulse flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Sincronizando sesión...
+            </p>
+        </div>
       </div>
     );
   }
 
-  // Si no hay usuario y ya terminó de cargar, la redirección del useEffect se encargará
-  if (!user) return null;
+  // Si no hay usuario, redirigimos (el useEffect de arriba lo hace), pero mostramos un estado seguro
+  if (!user) {
+      return (
+          <div className="flex flex-col min-h-screen bg-background items-center justify-center p-4">
+              <p className="text-muted-foreground">Redirigiendo al inicio de sesión...</p>
+          </div>
+      );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background" suppressHydrationWarning>
@@ -191,7 +215,12 @@ export default function DashboardPage() {
               </h1>
             </Link>
             <div className="flex items-center gap-2 sm:gap-4">
-              <DownloadReport drivers={drivers} allLogs={currentDayLogs} isAdmin={isAdmin} selectedSede={selectedSede} />
+              <DownloadReport 
+                firestore={firestore} 
+                drivers={drivers} 
+                isAdmin={isAdmin} 
+                dashboardSede={selectedSede} 
+              />
               <Dialog open={isAddLogOpen} onOpenChange={setAddLogOpen}>
                 <DialogTrigger asChild>
                   <Button disabled={isLoadingData} size="sm" className="shadow-md">
@@ -262,8 +291,28 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="relative w-full sm:w-[200px]">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Ruta (ej: 1, 2...)"
+                  value={routeSearch}
+                  onChange={(e) => setRouteSearch(e.target.value)}
+                  className="pl-9 pr-8 bg-white shadow-sm border-primary/10 h-10 font-medium"
+                />
+                {routeSearch && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute right-0 top-0 h-10 w-8 hover:bg-transparent"
+                    onClick={() => setRouteSearch("")}
+                  >
+                    <X className="h-3 w-3 text-muted-foreground" />
+                  </Button>
+                )}
+              </div>
+
               <div className="flex items-center gap-2 bg-card border rounded-md px-3 h-10 shadow-sm border-primary/10">
-                <ArrowUpDown className="h-4 w-4 text-primary shrink-0" />
                 <ArrowUpDown className="h-4 w-4 text-primary shrink-0" />
                 <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
                   <SelectTrigger className="border-0 bg-transparent shadow-none focus:ring-0 w-[140px] p-0 h-auto font-medium">
@@ -334,7 +383,7 @@ export default function DashboardPage() {
               <CalendarIcon className="h-10 w-10 text-muted-foreground/50" />
             </div>
             <h3 className="text-xl font-bold text-gray-800">No hay registros</h3>
-            <p className="text-muted-foreground max-w-xs mx-auto">Cambia la fecha o crea un nuevo registro para comenzar.</p>
+            <p className="text-muted-foreground max-w-xs mx-auto">Prueba cambiando los filtros o crea un nuevo registro para este día.</p>
           </div>
         )}
       </main>

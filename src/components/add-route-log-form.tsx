@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { type Driver, Sede } from "@/app/lib/types";
+import { type Driver } from "@/app/lib/types";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
@@ -61,7 +61,6 @@ export function AddRouteLogForm({ onAddLog, drivers, isAdmin }: AddRouteLogFormP
 
   const selectedIds = form.watch("driverIds");
 
-  // Ordenar conductores por número de ruta numéricamente
   const sortedDrivers = useMemo(() => {
     return [...drivers].sort((a, b) => 
       a.routeNumber.localeCompare(b.routeNumber, undefined, { numeric: true })
@@ -110,22 +109,22 @@ export function AddRouteLogForm({ onAddLog, drivers, isAdmin }: AddRouteLogFormP
         
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <FormLabel className="text-sm font-bold">Conductores ({selectedIds.length})</FormLabel>
+            <FormLabel className="text-sm font-bold">Selección de Conductores ({selectedIds.length})</FormLabel>
             <Button 
               type="button" 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
               onClick={toggleAll}
-              className="text-[10px] h-7 font-bold uppercase tracking-wider"
+              className="text-[10px] h-7 font-bold uppercase tracking-wider border-primary/20 hover:bg-primary/5"
             >
               {selectedIds.length === sortedDrivers.length ? "Desmarcar Todos" : "Seleccionar Todos"}
             </Button>
           </div>
           
-          <ScrollArea className="h-56 rounded-md border p-4 bg-muted/5">
+          <ScrollArea className="h-64 rounded-md border p-4 bg-muted/5">
             <div className="space-y-3">
               {sortedDrivers.map((driver) => (
-                <div key={driver.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
+                <div key={driver.id} className="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-primary/10 transition-all">
                   <Checkbox 
                     id={driver.id}
                     checked={selectedIds.includes(driver.id)}
@@ -137,13 +136,18 @@ export function AddRouteLogForm({ onAddLog, drivers, isAdmin }: AddRouteLogFormP
                         form.setValue("driverIds", current.filter(id => id !== driver.id));
                       }
                     }}
+                    className="h-5 w-5"
                   />
                   <Label 
                     htmlFor={driver.id} 
-                    className="text-sm cursor-pointer flex-1 font-medium flex items-center gap-2"
+                    className="text-sm cursor-pointer flex-1 font-medium flex items-center justify-between"
                   >
-                    <Badge variant="outline" className="font-mono text-[10px] bg-white">Ruta {driver.routeNumber}</Badge>
-                    <span className="truncate">{driver.name}</span>
+                    <span className="truncate text-foreground/80 font-bold">
+                        Ruta {driver.routeNumber} - {driver.name}
+                    </span>
+                    <Badge variant="outline" className="text-[10px] opacity-70">
+                        {driver.licensePlate}
+                    </Badge>
                   </Label>
                 </div>
               ))}
@@ -157,11 +161,11 @@ export function AddRouteLogForm({ onAddLog, drivers, isAdmin }: AddRouteLogFormP
           name="morningObservations"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Observaciones Generales</FormLabel>
+              <FormLabel>Observaciones Iniciales</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Notas que se aplicarán a todos los registros seleccionados..."
-                  className="resize-none h-20"
+                  placeholder="Notas adicionales para estos registros..."
+                  className="resize-none h-20 bg-muted/5 focus:bg-white"
                   {...field}
                 />
               </FormControl>
@@ -169,8 +173,8 @@ export function AddRouteLogForm({ onAddLog, drivers, isAdmin }: AddRouteLogFormP
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full font-bold shadow-lg h-11">
-          Añadir {selectedIds.length} Registro{selectedIds.length !== 1 ? 's' : ''}
+        <Button type="submit" className="w-full font-bold shadow-lg h-12 text-md transition-transform hover:scale-[1.01]">
+          Crear {selectedIds.length} Registro{selectedIds.length !== 1 ? 's' : ''}
         </Button>
       </form>
     </Form>
