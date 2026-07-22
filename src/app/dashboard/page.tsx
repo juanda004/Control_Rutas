@@ -86,6 +86,22 @@ export default function DashboardPage() {
 
   const { data: drivers, isLoading: driversLoading } = useCollection<Driver>(driversQuery);
 
+  const allRouteLogsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'routeLogs');
+  }, [firestore, user]);
+
+  const { data: allLogs } = useCollection<RouteLog>(allRouteLogsQuery);
+
+  const datesWithData = useMemo(() => {
+    if (!allLogs) return [];
+    const dateStrings = Array.from(new Set(allLogs.map(log => log.logDate)));
+    return dateStrings.map(ds => {
+      const [year, month, day] = ds.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    });
+  }, [allLogs]);
+
   const routeLogsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !selectedDateStr) return null;
     return query(collection(firestore, 'routeLogs'), where('logDate', '==', selectedDateStr));
@@ -220,6 +236,7 @@ export default function DashboardPage() {
                 drivers={drivers} 
                 isAdmin={isAdmin} 
                 dashboardSede={selectedSede} 
+                datesWithData={datesWithData}
               />
               <Dialog open={isAddLogOpen} onOpenChange={setAddLogOpen}>
                 <DialogTrigger asChild>
@@ -359,6 +376,12 @@ export default function DashboardPage() {
                     onSelect={(date) => date && setSelectedDate(date)}
                     initialFocus
                     locale={es}
+                    modifiers={{
+                      hasData: datesWithData
+                    }}
+                    modifiersClassNames={{
+                      hasData: "font-bold text-primary relative after:absolute after:bottom-[3px] after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:bg-primary aria-selected:after:bg-primary-foreground after:rounded-full"
+                    }}
                   />
                 </PopoverContent>
               </Popover>
