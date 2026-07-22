@@ -15803,3 +15803,22 @@ E0721 20:16:12.142788   24528 watch.go:40] Failed to load config from "c:\\xampp
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"E0721 20:22:42.081432   24528 watch.go:40] Failed to load config from \"c:\\\\xampp\\\\htdocs\\\\Control_Rutas\\\\dataconnect\": could not find dataconnect.yaml in `c:\\xampp\\htdocs\\Control_Rutas\\dataconnect`\n"}}
 [debug] [2026-07-22T01:22:52.079Z] E0721 20:22:52.079481   24528 watch.go:40] Failed to load config from "c:\\xampp\\htdocs\\Control_Rutas\\dataconnect": could not find dataconnect.yaml in `c:\xampp\htdocs\Control_Rutas\dataconnect`
  {"metadata":{"emulator":{"name":"dataconnect"},"message":"E0721 20:22:52.079481   24528 watch.go:40] Failed to load config from \"c:\\\\xampp\\\\htdocs\\\\Control_Rutas\\\\dataconnect\": could not find dataconnect.yaml in `c:\\xampp\\htdocs\\Control_Rutas\\dataconnect`\n"}}
+[debug] [2026-07-22T01:27:05.689Z] [Firebase Plugin] Activating Firebase extension.
+[info] [Firebase Plugin] Unable to check firebase-tools installation: TypeError: fetch failed
+[debug] [2026-07-22T01:27:45.313Z] [Firebase Plugin] requireAuthWrapper
+[debug] [2026-07-22T01:27:45.319Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-22T01:27:45.320Z] > authorizing via signed-in user (aprendizsenancs@gmail.com)
+[debug] [2026-07-22T01:27:45.325Z] Checked if tokens are valid: true, expires at: 1784685068342
+[debug] [2026-07-22T01:27:45.327Z] Checked if tokens are valid: true, expires at: 1784685068342
+[debug] [2026-07-22T01:27:45.327Z] [Firebase Plugin] User found:  aprendizsenancs@gmail.com
+[info] [Firebase Plugin] (Core:Project) New user detected, fetching projects
+[debug] [2026-07-22T01:27:45.332Z] Checked if tokens are valid: true, expires at: 1784685068342
+[debug] [2026-07-22T01:27:45.334Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-07-22T01:27:45.364Z] [Firebase Plugin] VSCode notification server listening on port 40001
+[info] [Firebase Plugin] Starting SQL Connect toolkit (version 3.4.16) on port 50001
+[info] i  dataconnect: downloading dataconnect-emulator-3.4.16.exe... {"metadata":{"emulator":{"name":"dataconnect"},"message":"downloading dataconnect-emulator-3.4.16.exe..."}}
+[debug] [2026-07-22T01:27:46.758Z] >>> [apiv2][query] GET https://storage.googleapis.com/firemat-preview-drop/emulator/dataconnect-emulator-windows-amd64-v3.4.16 
+[debug] [2026-07-22T01:27:55.288Z] <<< [apiv2][status] GET https://storage.googleapis.com/firemat-preview-drop/emulator/dataconnect-emulator-windows-amd64-v3.4.16 200
+[debug] [2026-07-22T01:27:55.289Z] <<< [apiv2][body] GET https://storage.googleapis.com/firemat-preview-drop/emulator/dataconnect-emulator-windows-amd64-v3.4.16 [stream]
+[debug] [2026-07-22T01:27:56.301Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-07-22T01:27:56.302Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]

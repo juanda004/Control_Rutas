@@ -30,9 +30,10 @@ interface DownloadReportProps {
   drivers: Driver[] | null;
   isAdmin: boolean;
   dashboardSede: Sede | null;
+  datesWithData?: Date[];
 }
 
-export function DownloadReport({ firestore, drivers, isAdmin, dashboardSede }: DownloadReportProps) {
+export function DownloadReport({ firestore, drivers, isAdmin, dashboardSede, datesWithData = [] }: DownloadReportProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -180,12 +181,12 @@ export function DownloadReport({ firestore, drivers, isAdmin, dashboardSede }: D
           <span className="hidden sm:inline">Descargar Reporte</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[320px] sm:w-[420px] p-0" align="end">
-        <div className="p-4 border-b text-center text-xs font-bold uppercase tracking-widest text-primary bg-primary/5">
+      <PopoverContent className="w-[320px] sm:w-[420px] p-0 max-h-[85vh] flex flex-col overflow-hidden" align="end">
+        <div className="p-4 border-b text-center text-xs font-bold uppercase tracking-widest text-primary bg-primary/5 shrink-0">
             Configuración del Reporte
         </div>
         
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 overflow-y-auto">
           {/* Selector de Rango de Fechas */}
           <div className="space-y-2">
             <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
@@ -201,6 +202,12 @@ export function DownloadReport({ firestore, drivers, isAdmin, dashboardSede }: D
                 numberOfMonths={1}
                 disabled={(d) => d > (today || new Date())}
                 className="border-0 shadow-none p-0"
+                modifiers={{
+                  hasData: datesWithData
+                }}
+                modifiersClassNames={{
+                  hasData: "font-bold text-primary relative after:absolute after:bottom-[3px] after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:bg-primary aria-selected:after:bg-primary-foreground after:rounded-full"
+                }}
               />
             </div>
           </div>
